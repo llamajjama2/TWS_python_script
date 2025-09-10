@@ -5,7 +5,7 @@
 
 3. Once a sweep get the data for the 1 and 5 minute can use the same function as get_high_low 
 
-4. make a function to look for FVG so with the data given from the 1 and 5 minutes check if theres a FVG with a boolean function we prob want to set that to around 0.5% change 
+4. make a function to look for FVG so with the data given from the 1 and 5 minutes check if theres a FVG with a boolean function we prob want to set that to higher than the last 3 candle bars or lower 
 
 5. make a boolean function for Break of structure, like a reversal but we need to check if it goes below the previous low after a high rally and vice versa 
 
@@ -15,15 +15,11 @@
 
 8 then check stuff again and GO 
 
-
-
-
 """
-
+#get the high and lows of any market bar  
 def get_high_low(contract, duration, bar_size):
     """
     Fetch historical bars and return the high and low.
-    
     :param contract: IB Contract (e.g., Stock)
     :param duration: How far back (e.g., '1 D', '2 D')
     :param bar_size: Bar size (e.g., '1 hour', '4 hours', '1 day')
@@ -46,13 +42,54 @@ def get_high_low(contract, duration, bar_size):
 
 
 
-def is_FVG(bar_data): 
-    if():
-        return True 
+#Get the 1 minute and 5 minute data 
+def get_minutes_data(contract, ib):
+    ticker = ib.reqMktData(contract, '', snapshot=False, regulatorySnapshot=False)
+    ib.sleep(2)  # give IBKR a moment to send data
 
+    if not ticker:
+        return None
+
+    return ticker
+
+
+def get_historical_data(contract, duration, bar_size):
+    bars = ib.reqHistoricalData(
+        contract,
+        endDateTime='',
+        durationStr=duration,
+        barSizeSetting=bar_size,
+        whatToShow='TRADES',
+        useRTH=True,     
+        formatDate=1
+    )
+    if not bars:
+        return None, None
+    return high, low
+
+#WARNING TEST FOR BOTH reqMktData and the reqHistoricalData
+def is_FVG(bars): 
+    if len(bars) < 3: 
+        return False, None
+    
+    c1, c2, c3 = bars[-3], bars[-2], bars[-1]
+
+    if c1.high < c3.low:
+        return True, "Bullish"
+
+    if c1.low > c3.high:
+        return True, "Bearish"
+    
+    return False, None 
+"""
+to call just type found, fvg_type = check_fvg(bars)
+where found is the bool and fvg_type is None or Bearish/bullish 
+"""
+
+def is_bos(bar):
     
 
-    return False 
+
 
 
 
