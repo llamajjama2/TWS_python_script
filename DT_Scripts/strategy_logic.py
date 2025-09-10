@@ -106,6 +106,75 @@ def is_bos(bar):
 
 
 #79% fib function 
+def fib_function(price, low_price, high_price, direction='up', tolerance=0.0): 
+    """
+    Check if current price is near the 79% Fibonacci retracement/extension.
+    
+    :param price: current price (float)
+    :param low_price: start of move
+    :param high_price: end of move
+    :param direction: 'up' or 'down' (trend direction)
+    :param tolerance: optional range around fib79 to count as a bounce
+    :return: (hit_fib79: bool, passed_fib79: bool)
+    """
+    if direction == 'up':
+        fib79 = high_price - (high_price - low_price) * 0.79
+        hit = fib79 - tolerance <= price <= fib79 + tolerance
+        passed = price < fib79 - tolerance #trend still falling past our line  
+    else:  # downtrend
+        fib79 = low_price + (high_price - low_price) * 0.79
+        hit = fib79 - tolerance <= price <= fib79 + tolerance
+        passed = price > fib79 + tolerance #price is still rising past our line
+
+    return hit, passed
+
+def is_ob(bars, direction="bullish", tolerance=0.0): 
+    if len(bars) < 3:
+        return False, None
+
+
+    c1, c2, c3 = bars[-3], bars[-2], bars[-1]
+
+    if direction == 'bullish':
+        
+        if c2.close < c2.open and c3.close > c2.high:
+            ob_low = c2.low
+            ob_high = c2.high
+            tapped = ob_low - tolerance <= c3.low <= ob_high + tolerance
+            return tapped, (ob_low, ob_high)
+
+    elif direction == 'bearish':
+   
+        if c2.close > c2.open and c3.close < c2.low:
+            ob_low = c2.low
+            ob_high = c2.high
+            tapped = ob_low - tolerance <= c3.high <= ob_high + tolerance
+            return tapped, (ob_low, ob_high)
+
+    return False, None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
