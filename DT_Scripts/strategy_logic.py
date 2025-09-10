@@ -42,7 +42,11 @@ def get_high_low(contract, duration, bar_size):
 
 
 
-#Get the 1 minute and 5 minute data 
+#Get the 1 minute and 5 minute data continuously 
+def get_data():
+    bars = ib.reqRealTimeBars(contract, 60, "TRADES", useRTH=True)
+    return bars
+
 def get_minutes_data(contract, ib):
     ticker = ib.reqMktData(contract, '', snapshot=False, regulatorySnapshot=False)
     ib.sleep(2)  # give IBKR a moment to send data
@@ -86,10 +90,22 @@ to call just type found, fvg_type = check_fvg(bars)
 where found is the bool and fvg_type is None or Bearish/bullish 
 """
 
+
+#trend change break above previous high or low
 def is_bos(bar):
-    
+    global last_high, last_low
+    if(bar.high > last_high):
+        print("BOS Up detected at", bar.date, "high:", bar.high)
+        last_high = bar.high
+        return True, "Uptrend"
+    if(bar.low < last_low):
+        print("BOS Down detected at", bar.date, "low:", bar.low)
+        last_low = bar.low
+        return True, "Downtrend"    
+    return False, None
 
 
+#79% fib function 
 
 
 
