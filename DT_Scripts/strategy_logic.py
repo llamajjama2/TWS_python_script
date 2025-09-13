@@ -105,6 +105,8 @@ def is_bos(bar):
     return False, None
 
 
+
+
 #79% fib function 
 def fib_function(price, low_price, high_price, direction='up', tolerance=0.0): 
     """
@@ -127,7 +129,7 @@ def fib_function(price, low_price, high_price, direction='up', tolerance=0.0):
         passed = price > fib79 + tolerance #price is still rising past our line
 
     return hit, passed
-
+#order block function 
 def is_ob(bars, direction="bullish", tolerance=0.0): 
     if len(bars) < 3:
         return False, None
@@ -154,25 +156,63 @@ def is_ob(bars, direction="bullish", tolerance=0.0):
     return False, None
 
 
+current_tend = None 
+# change in order flow
+#candles: list of dicts with { 'high': float, 'low': float, 'close': float }
+def change_of(bar):
+    global current-trend
+    bos, direction = is_bos(bar) 
+
+
+    if not bos: 
+        return False, None 
+    
+    if current_trend is None: 
+        current_trend = direction 
+        return False, None 
+    
+    if direction != current_trend: 
+        print("Change in Order Flow detected at", bar.date, "direction:", direction)
+        current_trend = direction
+        return True, direction
+
+    current_trend = direction 
+    return False, None 
 
 
 
 
+# get the 50% equilibrium for possible selling above is expensive, below is cheap
+def equilibrium_level(high, low):
+    return (high + low) / 2
+
+
+def is_at_equilibrium(price, high, low, tolerance=0.1):
+    eq = equilibrium_level(high, low)
+    return abs(price - eq) <= tolerance, eq
 
 
 
+def find_support_resistance(bars, lookback=20, tolerance=0.01):
+    highs = [bar.high for bar in bars[-lookback:]]
+    lows = [bar.low for bar in bars[-lookback:]]
+    
+    support_levels = []
+    resistance_levels = []
 
-
-
-
-
-
-
-
-
-
-
-
+    # Simple swing detection
+    for i in range(1, len(highs)-1):
+        # Swing High → Resistance
+        if highs[i] > highs[i-1] and highs[i] > highs[i+1]:
+            # Check tolerance grouping
+            if not any(abs(highs[i] - r) <= tolerance*highs[i] for r in resistance_levels):
+                resistance_levels.append(highs[i])
+        # Swing Low → Support
+        if lows[i] < lows[i-1] and lows[i] < lows[i+1]:
+            if not any(abs(lows[i] - s) <= tolerance*lows[i] for s in support_levels):
+                support_levels.append(lows[i])
+                
+    return support_levels, resistance_levels
 
 
 
