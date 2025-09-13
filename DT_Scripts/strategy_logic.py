@@ -215,6 +215,21 @@ def find_support_resistance(bars, lookback=20, tolerance=0.01):
     return support_levels, resistance_levels
 
 
+def check_breaker_block_tap(price, support_levels, resistance_levels, tolerance=0.01):
+    """
+    Check if price taps a breaker block.
+    
+    Returns: (tapped: bool, block_level: float)
+    """
+    for s in support_levels:
+        if price >= s*(1 - tolerance) and price <= s*(1 + tolerance):
+            return True, s  # former support now resistance
+    
+    for r in resistance_levels:
+        if price >= r*(1 - tolerance) and price <= r*(1 + tolerance):
+            return True, r  # former resistance now support
+    
+    return False, None
 
 
 
