@@ -215,21 +215,29 @@ def find_support_resistance(bars, lookback=20, tolerance=0.01):
     return support_levels, resistance_levels
 
 
-def check_breaker_block_tap(price, support_levels, resistance_levels, tolerance=0.01):
-    """
-    Check if price taps a breaker block.
-    
-    Returns: (tapped: bool, block_level: float)
-    """
+def update_flipped_levels(price):
+    global flipped_levels
     for s in support_levels:
-        if price >= s*(1 - tolerance) and price <= s*(1 + tolerance):
-            return True, s  # former support now resistance
-    
+        if price < s and not any(f['level']==s for f in flipped_levels):
+            # Support broken → now potential resistance
+            flipped_levels.append({'level': s, 'type': 'support'})
     for r in resistance_levels:
-        if price >= r*(1 - tolerance) and price <= r*(1 + tolerance):
-            return True, r  # former resistance now support
-    
-    return False, None
+        if price > r and not any(f['level']==r for f in flipped_levels):
+            # Resistance broken → now potential support
+            flipped_levels.append({'level': r, 'type': 'resistance'})
+
+def check_breaker_block_tap(price):
+    for f in flipped_levels:
+        lvl = f['level']
+        lvl_type = f['type']
+        if lvl_type == 'support':  # broken support → resistance
+            if lvl*(1 - tolerance) <= price <= lvl*(1 + tolerance):
+                return True, lvl, 'Support → Resistance'
+        elif lvl_type == 'resistance':  # broken resistance → support
+            if lvl*(1 - tolerance) <= price <= lvl*(1 + tolerance):
+                return True, lvl, 'Resistance → Support'
+    return False, None, None
+
 
 
 
