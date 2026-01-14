@@ -160,7 +160,7 @@ current_tend = None
 # change in order flow
 #candles: list of dicts with { 'high': float, 'low': float, 'close': float }
 def change_of(bar):
-    global current-trend
+    global current_trend
     bos, direction = is_bos(bar) 
 
 
