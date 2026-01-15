@@ -21,16 +21,17 @@ from datetime import datetime
 util.startLoop()
 
 #manual config(adjust these) 
-LEVELS  = [680.7, 683, 685, 687, 688.45, 689.2, 690.20, 691.70]                #resistance levels 
-TOLERANCE =  0.2              #$3 tolerance 
+LEVELS  = [680.2, 683.8, 686.6,  688.5, 691.6, 695, 700 ]                #resistance levels 
+
 STOP_OFFSET = 0.25           #
 QTY = 2                    # 10 shares of SPY $5000 
 TP_PERCENT = 0.5            #take profit 50% 
 MAX_TRADE_TIME = 60 * 30    #the function does it in seconds 
 TP_OFFSET = 0.25            #test 
-CONFIRM_DISTANCE = 0.5      #price rejection need to be at from now 
+CONFIRM_DISTANCE = 0.25      #price rejection need to be at from now 
 CONFIRM_TIMEOUT = 60
-
+COOLDOWN = 60 * 10
+last_trade_time_by_level = {}
 
 
 
@@ -104,6 +105,10 @@ def main():
             continue
 
         for level in LEVELS:
+            now = datetime.now()
+            if level in last_trade_time_by_level:
+                if (now - last_trade_time_by_level[level]).seconds < COOLDOWN:
+                    continue
             # ----------------- SHORT LOGIC (resistance) -----------------
             if not position_open:
                 # Step 1: confirmation
@@ -125,7 +130,7 @@ def main():
 
                         entry_trade = ib.placeOrder(contract, MarketOrder('SELL', QTY, transmit=True))
                         entry_trade.filledEvent
-                    
+                        last_trade_time_by_level[level] = now
                         entry_price = entry_trade.orderStatus.avgFillPrice
                         print("entry_price")
                         entry_time = datetime.now()
@@ -176,7 +181,7 @@ def main():
 
                         entry_trade = ib.placeOrder(contract, MarketOrder('BUY', QTY, transmit=True))
                         entry_trade.filledEvent
-
+                        last_trade_time_by_level[level] = now
                         entry_price = entry_trade.orderStatus.avgFillPrice
                         print("entry_price")
                         entry_time = datetime.now()

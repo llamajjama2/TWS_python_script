@@ -59,7 +59,7 @@ import pytz
 util.startLoop()
 
 #manual config(adjust these) 
-LEVELS  = [680.2, 683.8, 686.6,  688.5, 690.3, 691.6 ]                #resistance levels 
+LEVELS  = [680.2, 683.8, 686.6,  688.5, 691.6, 695, 700 ]                #resistance levels 
 TOLERANCE =  0.1              #$3 tolerance 
 STOP_OFFSET = 0.5           #
 QTY = 10                    # 10 shares of SPY $5000 
@@ -68,8 +68,8 @@ MAX_TRADE_TIME = 60 * 30    #the function does it in seconds
 TP_OFFSET = 0.25            #test 
 CONFIRM_DISTANCE = 0.5      #price rejection need to be at from now 
 ITERATIONS = 20             
-
-
+COOLDOWN = 60 * 10
+last_trade_time_by_level = {}
 
 US_EASTERN = pytz.timezone("US/Eastern")
 
@@ -135,23 +135,33 @@ def main():
         if price is None:
             continue
         #THUYRHDJHRDJDRJDRJDRJDRJDRJDRJRDJJRJDRJDRJRDJDJRRJ
-        print(f"Price: {price}")
+        #print(f"Price: {price}")
         if last_price is None: 
             last_price = price
             continue
+        
+        
+
 
         for level in LEVELS:
+            now = datetime.now()
+            if level in last_trade_time_by_level:
+                if (now - last_trade_time_by_level[level]).seconds < COOLDOWN:
+                    continue
+
+            
             in_zone = (level - TOLERANCE) <= price <= (level + TOLERANCE)
             
             if in_zone and not position_open:
                 if price < level:  # approaching from below → resistance SHORTTTTTTT
-                    rejection = price < last_price  # price starts falling
+                    rejection = (level - price) >= CONFIRM_DISTANCE  # price starts falling
                     if rejection:
                         print(f"🔻 Resistance bounce at {level} — SHORT SPY")
 
                         entry_trade = ib.placeOrder(contract, MarketOrder('SELL', QTY, transmit=True))
                         entry_trade.filledEvent
-                    
+                        last_trade_time_by_level[level] = now
+
                         entry_price = entry_trade.orderStatus.avgFillPrice
                         entry_time = datetime.now()
                         position_side = "SHORT"
@@ -180,6 +190,7 @@ def main():
                                     stop_trade.filledEvent += on_stop_fill
                             tp_trade.filledEvent += on_tp_fill
 
+
                 elif price > level:         # approaching from above → support LONGGGGGGGG 
                     rejection = price > last_price  # price starts rising
                     if rejection:
@@ -187,7 +198,7 @@ def main():
 
                         entry_trade = ib.placeOrder(contract, MarketOrder('BUY', QTY, transmit=True))
                         entry_trade.filledEvent
-
+                        last_trade_time_by_level[level] = now
                         entry_price = entry_trade.orderStatus.avgFillPrice
                         entry_time = datetime.now()
                         position_side = "LONG"
@@ -214,6 +225,8 @@ def main():
                                     stop_trade = ib.placeOrder(contract, StopOrder('SELL', remaining_qty, tp_level - STOP_OFFSET, transmit=True))
                                     stop_trade.filledEvent += on_stop_fill
                             tp_trade.filledEvent += on_tp_fill
+                        
+
         
         last_price = price
         if position_open and entry_time:
